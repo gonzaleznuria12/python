@@ -11,7 +11,9 @@ BASE_URL = 'https://api.openweathermap.org/data/2.5/weather'
 def home():
     return render_template('index.html')
 
-# Función para obtener datos del clima
+# Función para obtener datos del clima desde la API
+# Toma el nombre de la ciudad y devuelve los datos en formato JSON
+
 def fetch_weather(city):
     params = {'q': city, 'appid': API_KEY, 'units': 'metric'}
     response = requests.get(BASE_URL, params=params)
@@ -21,10 +23,11 @@ def fetch_weather(city):
 @app.route('/general', methods=['GET', 'POST'])
 def general_weather():
     if request.method == 'POST':
-        city = request.form.get('city')
-        city_data = fetch_weather(city)
+        city = request.form.get('city')  # Obtiene la ciudad del formulario
+        city_data = fetch_weather(city)  # Obtiene los datos del clima de la API
         
         if city_data:
+            # Extrae la información relevante del JSON de la API
             weather_info = {
                 'name': city_data['name'],
                 'temp': city_data['main']['temp'],
@@ -43,22 +46,24 @@ def general_weather():
     
     return render_template('general_form.html')
 
-# Ruta para comparar clima entre dos ciudades
+# Ruta para comparar el clima entre dos ciudades
 @app.route('/compare', methods=['GET', 'POST'])
 def compare_weather():
     if request.method == 'POST':
-        city1 = request.form.get('city1')
-        city2 = request.form.get('city2')
-        preference = request.form.get('preference')
+        city1 = request.form.get('city1')  # Obtiene la primera ciudad
+        city2 = request.form.get('city2')  # Obtiene la segunda ciudad
+        preference = request.form.get('preference')  # Preferencia climática
 
         city1_data = fetch_weather(city1)
         city2_data = fetch_weather(city2)
 
         best_city = None
         if city1_data and city2_data:
+            # Obtiene el estado del clima en ambas ciudades
             weather1 = city1_data['weather'][0]['main'].lower()
             weather2 = city2_data['weather'][0]['main'].lower()
             
+            # Mapa de preferencias climáticas
             weather_map = {
                 'sunny': ['clear', 'few clouds'],
                 'rainy': ['rain', 'drizzle'],
@@ -67,6 +72,7 @@ def compare_weather():
                 'clear': ['clear']
             }
             
+            # Compara las ciudades con la preferencia seleccionada
             if weather1 in weather_map.get(preference, []):
                 best_city = {'name': city1, 'temp': city1_data['main']['temp'], 'weather': weather1, 'icon': city1_data['weather'][0]['icon']}
             elif weather2 in weather_map.get(preference, []):
@@ -76,17 +82,17 @@ def compare_weather():
             message = f"The best city for {preference} weather is {best_city['name']}!"
             return render_template('compare_result.html', best_city=best_city, message=message)
         else:
-            error = "Neither city matches your preference. Try checking the weather manually."
+            error = "Neither city matches your preference."
             return render_template('compare_result.html', error=error)
 
     return render_template('compare_form.html')
 
-# Ruta para seleccionar el clima en Europa
+# Ruta para seleccionar el clima en Europa según la preferencia del usuario
 @app.route('/select_weather', methods=['GET', 'POST'])
 def select_weather():
     if request.method == 'POST':
-        preference = request.form.get('preference')
-        cities = ['London', 'Paris', 'Berlin', 'Madrid', 'Rome', 'Athens']  # Ejemplo de ciudades en Europa
+        preference = request.form.get('preference')  # Obtiene la preferencia climática
+        cities = ['London', 'Paris', 'Berlin', 'Madrid', 'Rome', 'Athens']  # Lista de ciudades en Europa
         best_city = None
 
         for city in cities:
@@ -109,5 +115,6 @@ def select_weather():
     
     return render_template('select_weather_form.html')
 
+# Ejecuta la aplicación en modo depuración
 if __name__ == '__main__':
     app.run(debug=True)
